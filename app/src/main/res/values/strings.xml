@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">UnsRedis</string>
+
+    <string name="connect">connect</string>
+    <string name="disconnect">disconnect</string>
+    <string name="result">result</string>
+    <string name="status">status :&#160;</string>
 </resources>

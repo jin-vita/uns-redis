@@ -51,7 +51,6 @@ class RedisService : Service() {
     private val clients by lazy { ConcurrentLinkedDeque<RedisInfo>() }
     private val isConnecting = AtomicBoolean(false)
 
-    private var redisAction = ""
     private var channelId = ""
     private var host = ""
     private var port = 0
@@ -96,7 +95,6 @@ class RedisService : Service() {
             when (this) {
                 // 연결 혹은 끊기를 while 처럼 빠르게 반복하면 redisConnectionException 이 생겨서 0.5초 딜레이
                 RedisExtras.CONNECT -> {
-                    redisAction = intent.getStringExtra(RedisExtras.REDIS_ACTION).toString()
                     host = intent.getStringExtra(RedisExtras.REDIS_HOST).toString()
                     port = intent.getIntExtra(RedisExtras.REDIS_PORT, 0)
                     channelId = intent.getStringExtra(RedisExtras.MY_CHANNEL).toString()

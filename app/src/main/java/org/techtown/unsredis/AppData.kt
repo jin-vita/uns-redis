@@ -3,9 +3,16 @@ package org.techtown.unsredis
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.net.SocketException
 
 object AppData {
+    val logList by lazy { mutableListOf<String>() }
+
     const val ACTION_REDIS_DATA = "org.techtown.redis.data"
+    const val REDIS_HOST = "192.168.42.186"
+    const val REDIS_PORT = 6379
 
     var isDebug = true
     fun debug(tag: String, msg: String) {
@@ -21,6 +28,23 @@ object AppData {
         if (::toast.isInitialized) toast.cancel()
         toast = Toast.makeText(context, msg, Toast.LENGTH_SHORT)
         toast.show()
+    }
+
+    fun getIP(): String {
+        try {
+            val en = NetworkInterface.getNetworkInterfaces()
+            while (en.hasMoreElements()) {
+                val it = en.nextElement()
+                val enumIpAddress = it.inetAddresses
+                while (enumIpAddress.hasMoreElements()) {
+                    val inetAddress = enumIpAddress.nextElement()
+                    if (!inetAddress.isLoopbackAddress && inetAddress is Inet4Address)
+                        return inetAddress.getHostAddress() ?: "unknown IP"
+                }
+            }
+        } catch (_: SocketException) {
+        }
+        return "unknown IP"
     }
 
 }
