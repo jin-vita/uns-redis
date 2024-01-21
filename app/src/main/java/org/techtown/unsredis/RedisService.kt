@@ -1,6 +1,5 @@
 package org.techtown.unsredis
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -19,8 +18,9 @@ import io.lettuce.core.pubsub.RedisPubSubListener
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
 import io.lettuce.core.resource.ClientResources
 import io.lettuce.core.resource.Delay
-import java.text.SimpleDateFormat
 import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
@@ -86,7 +86,6 @@ class RedisService : Service() {
         startForeground(1, notification)
     }
 
-
     private fun handleCommand(intent: Intent) {
         val command = intent.getStringExtra(RedisExtras.COMMAND)
         AppData.debug(TAG, "command in RedisService : $command")
@@ -135,7 +134,6 @@ class RedisService : Service() {
                 return@thread
             }
             // 이 부분에서 size 는 언제나 0 이어야 한다.
-            broadcastToActivity(RedisExtras.UNKNOWN, "clients.size: ${clients.size}")
             AppData.error(TAG, "clients.size: ${clients.size}")
             val options = ClientResources.builder()
                 .reconnectDelay(Delay.constant(Duration.ofSeconds(10)))
@@ -171,8 +169,8 @@ class RedisService : Service() {
                     try {
                         if (publishConnection == null) publishConnection =
                             it.client.connect().sync()
-                        @SuppressLint("SimpleDateFormat")
-                        val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+                        val formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss")
+                        val now = LocalDateTime.now().format(formatter)
                         publishConnection?.publish(channelId, "check redis connection $now")
                     } catch (e: RedisConnectionException) {
                         e.printStackTrace()
@@ -242,6 +240,7 @@ class RedisService : Service() {
      */
     private fun onMessageReceived(channel: String, data: String) {
         AppData.debug(TAG, "onMessageReceived called in RedisService.")
+        broadcastToActivity(channel, data)
 
     }
 
@@ -251,11 +250,9 @@ class RedisService : Service() {
     private fun broadcastToActivity(channel: String, data: String) =
         with(Intent(AppData.ACTION_REDIS_DATA)) {
             AppData.error(TAG, "broadcastToActivity called. channel : $channel, data : $data")
-
-            putExtra(RedisExtras.COMMAND, "log")
+            putExtra(RedisExtras.COMMAND, "REDIS")
             putExtra("channel", channel)
             putExtra("data", data)
-
             sendBroadcast(this)
         }
 

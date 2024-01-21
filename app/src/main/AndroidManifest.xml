@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- redis 통신 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Notification startForeground -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -21,6 +26,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".RedisService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":redis" />
     </application>
 
 </manifest>

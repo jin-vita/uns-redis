@@ -3,6 +3,6 @@
 
     <string name="connect">connect</string>
     <string name="disconnect">disconnect</string>
-    <string name="result">result</string>
     <string name="status">status :&#160;</string>
+    <string name="channel">channel :&#160;</string>
 </resources>
