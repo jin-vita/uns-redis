@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_horizontal"
-    tools:context=".MainActivity">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center_horizontal"
+              tools:context=".MainActivity">
 
     <Space
         android:layout_width="match_parent"
@@ -33,21 +33,32 @@
             android:layout_height="match_parent" />
 
         <Button
-            android:id="@+id/connectButton"
+            android:id="@+id/connect1Button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/connect" />
+            android:layout_weight="2"
+            android:text="@string/test01" />
 
         <Space
-            android:layout_width="20dp"
+            android:layout_width="10dp"
+            android:layout_height="match_parent" />
+
+        <Button
+            android:id="@+id/connect2Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="@string/test02" />
+
+        <Space
+            android:layout_width="10dp"
             android:layout_height="match_parent" />
 
         <Button
             android:id="@+id/disconnectButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="3"
             android:text="@string/disconnect" />
 
         <Space

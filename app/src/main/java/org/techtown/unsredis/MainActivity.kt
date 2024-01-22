@@ -10,6 +10,7 @@ import android.text.method.ScrollingMovementMethod
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import org.techtown.unsredis.databinding.ActivityMainBinding
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -21,13 +22,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var redisReceiver: BroadcastReceiver
     private lateinit var redisFilter: IntentFilter
 
-    private var channel = "test01"
+    private var channelList = arrayOf("test01", "test02")
 
     override fun onStart() {
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
         super.onStart()
-        registerReceiver(redisReceiver, redisFilter)
+        ContextCompat.registerReceiver(baseContext, redisReceiver, redisFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onStop() {
@@ -52,14 +53,37 @@ class MainActivity : AppCompatActivity() {
 
         resultText.movementMethod = ScrollingMovementMethod()
 
-        connectButton.setOnClickListener {
-            binding.statusText.text = "connecting..."
-            connect(channel)
+        connect1Button.setOnClickListener {
+            binding.statusText.text = getString(R.string.connecting)
+            connect(channelList.first())
+            connect1Button.isEnabled = false
+            connect2Button.isEnabled = true
         }
-        disconnectButton.setOnClickListener { disconnect() }
+
+        connect2Button.setOnClickListener {
+            binding.statusText.text = getString(R.string.connecting)
+            connect(channelList.last())
+            connect1Button.isEnabled = true
+            connect2Button.isEnabled = false
+        }
+
+        disconnectButton.setOnClickListener {
+            connect1Button.isEnabled = true
+            connect2Button.isEnabled = true
+            disconnect()
+        }
+
         sendButton.setOnClickListener {
             binding.chatInput.apply {
-                sendData(channel, this.text.toString().trim())
+                when {
+                    connect1Button.isEnabled && connect2Button.isEnabled ->
+                        AppData.showToast(this@MainActivity, "현재 연결이 없음")
+
+                    else -> {
+                        val channel = if (connect1Button.isEnabled) channelList.first() else channelList.last()
+                        sendData(channel, this.text.toString().trim())
+                    }
+                }
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(this.windowToken, 0)
                 this.setText("")
@@ -85,24 +109,23 @@ class MainActivity : AppCompatActivity() {
         AppData.debug(tag, "$command : $channel - $data")
         printLog("$command : $channel - $data")
         data?.apply {
-            AppData.showToast(this@MainActivity, this)
             when {
                 startsWith("check redis connection") -> return
                 startsWith("already connected") or startsWith("successfully connected") -> {
-                    binding.statusText.text = RedisExtras.CONNECT
+                    binding.statusText.text = getString(R.string.connected)
                     binding.idText.text = channel
                 }
 
                 endsWith("unsubscribed") -> {
-                    binding.statusText.text = RedisExtras.DISCONNECT
+                    binding.statusText.text = getString(R.string.disconnect)
                     binding.idText.text = RedisExtras.UNKNOWN
                 }
 
                 equals("fail to connect") ->
-                    binding.statusText.text = "check IP or PORT"
+                    binding.statusText.text = getString(R.string.fail_to_connect)
 
                 equals("fail to reconnect") ->
-                    binding.statusText.text = "check network status"
+                    binding.statusText.text = getString(R.string.fail_to_reconnect)
 
                 else -> setData(this)
             }
@@ -110,6 +133,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setData(data: String) {
+        val method = Thread.currentThread().stackTrace[2].methodName
+        AppData.debug(tag, "$method called. data: $data")
         // TODO: 레디스로부터 받은 메시지 처리 로직 작성
     }
 
@@ -138,6 +163,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendData(channel: String, data: String) = with(Intent(this, RedisService::class.java)) {
+        printLog("to $channel : $data")
         putExtra(RedisExtras.COMMAND, "send")
         putExtra(RedisExtras.CHANNEL, channel)
         putExtra(RedisExtras.DATA, data)

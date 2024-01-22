@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+          xmlns:tools="http://schemas.android.com/tools">
 
     <!-- redis 통신 -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -30,7 +30,9 @@
             android:name=".RedisService"
             android:enabled="true"
             android:exported="false"
-            android:process=":redis" />
+            android:foregroundServiceType="remoteMessaging"
+            android:process=":redis"
+            tools:ignore="ForegroundServicePermission" />
     </application>
 
 </manifest>
