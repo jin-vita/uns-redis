@@ -25,9 +25,9 @@ class MainActivity : AppCompatActivity() {
     private var channelList = arrayOf("test01", "test02")
 
     override fun onStart() {
+        super.onStart()
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        super.onStart()
         ContextCompat.registerReceiver(baseContext, redisReceiver, redisFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
@@ -103,9 +103,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun setReceivedData(intent: Intent) {
-        val command = intent.getStringExtra(RedisExtras.COMMAND)
-        val channel = intent.getStringExtra(RedisExtras.CHANNEL)
-        val data = intent.getStringExtra(RedisExtras.DATA)
+        val command = intent.getStringExtra(Extras.COMMAND)
+        val channel = intent.getStringExtra(Extras.CHANNEL)
+        val data = intent.getStringExtra(Extras.DATA)
         AppData.debug(tag, "$command : $channel - $data")
         printLog("$command : $channel - $data")
         data?.apply {
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
 
                 endsWith("unsubscribed") -> {
                     binding.statusText.text = getString(R.string.disconnect)
-                    binding.idText.text = RedisExtras.UNKNOWN
+                    binding.idText.text = Extras.UNKNOWN
                 }
 
                 equals("fail to connect") ->
@@ -145,10 +145,10 @@ class MainActivity : AppCompatActivity() {
         binding.idText.text = channel
 
         Intent(this, RedisService::class.java).also {
-            it.putExtra(RedisExtras.COMMAND, RedisExtras.CONNECT)
-            it.putExtra(RedisExtras.REDIS_HOST, host)
-            it.putExtra(RedisExtras.REDIS_PORT, port)
-            it.putExtra(RedisExtras.MY_CHANNEL, channel)
+            it.putExtra(Extras.COMMAND, Extras.CONNECT)
+            it.putExtra(Extras.REDIS_HOST, host)
+            it.putExtra(Extras.REDIS_PORT, port)
+            it.putExtra(Extras.MY_CHANNEL, channel)
             startForegroundService(it)
         }
     }
@@ -157,16 +157,16 @@ class MainActivity : AppCompatActivity() {
         AppData.debug(tag, "disconnect called")
 
         Intent(this, RedisService::class.java).also {
-            it.putExtra(RedisExtras.COMMAND, RedisExtras.DISCONNECT)
+            it.putExtra(Extras.COMMAND, Extras.DISCONNECT)
             startForegroundService(it)
         }
     }
 
     private fun sendData(channel: String, data: String) = with(Intent(this, RedisService::class.java)) {
         printLog("to $channel : $data")
-        putExtra(RedisExtras.COMMAND, "send")
-        putExtra(RedisExtras.CHANNEL, channel)
-        putExtra(RedisExtras.DATA, data)
+        putExtra(Extras.COMMAND, Extras.SEND)
+        putExtra(Extras.CHANNEL, channel)
+        putExtra(Extras.DATA, data)
         startForegroundService(this)
     }
 

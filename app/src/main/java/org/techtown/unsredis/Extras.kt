@@ -1,6 +1,6 @@
 package org.techtown.unsredis
 
-object RedisExtras {
+object Extras {
     const val REDIS_ACTION = "redis-action"
     const val REDIS_HOST = "redis-host"
     const val REDIS_PORT = "redis-port"
@@ -10,6 +10,7 @@ object RedisExtras {
     const val COMMAND = "command"
     const val CHANNEL = "channel"
     const val DATA = "data"
+    const val SEND = "send"
     const val CONNECT = "connect"
     const val DISCONNECT = "disconnect"
 }

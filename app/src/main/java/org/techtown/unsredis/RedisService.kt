@@ -87,28 +87,28 @@ class RedisService : Service() {
     }
 
     private fun handleCommand(intent: Intent) {
-        val command = intent.getStringExtra(RedisExtras.COMMAND)
+        val command = intent.getStringExtra(Extras.COMMAND)
         AppData.debug(TAG, "command in RedisService : $command")
 
         command?.apply {
             when (this) {
                 // 연결 혹은 끊기를 while 처럼 빠르게 반복하면 redisConnectionException 이 생겨서 0.5초 딜레이
-                RedisExtras.CONNECT -> {
-                    host = intent.getStringExtra(RedisExtras.REDIS_HOST).toString()
-                    port = intent.getIntExtra(RedisExtras.REDIS_PORT, 0)
-                    channelId = intent.getStringExtra(RedisExtras.MY_CHANNEL).toString()
+                Extras.CONNECT -> {
+                    host = intent.getStringExtra(Extras.REDIS_HOST).toString()
+                    port = intent.getIntExtra(Extras.REDIS_PORT, 0)
+                    channelId = intent.getStringExtra(Extras.MY_CHANNEL).toString()
                     connectionHandler.removeMessages(0)
                     connectionHandler.postDelayed(::connectRedis, 500)
                 }
 
-                RedisExtras.DISCONNECT -> {
+                Extras.DISCONNECT -> {
                     connectionHandler.removeMessages(0)
                     connectionHandler.postDelayed(::disconnectRedis, 500)
                 }
 
-                "send" -> {
-                    intent.getStringExtra(RedisExtras.CHANNEL)?.let {
-                        val data = intent.getStringExtra(RedisExtras.DATA) ?: "전달할 데이터 없음"
+                Extras.SEND -> {
+                    intent.getStringExtra(Extras.CHANNEL)?.let {
+                        val data = intent.getStringExtra(Extras.DATA) ?: "전달할 데이터 없음"
                         sendData(it, data)
                     }
                 }
@@ -164,7 +164,7 @@ class RedisService : Service() {
     private fun checkConnection() {
         thread {
             timer?.cancel()
-            timer = timer(period = RedisExtras.CHECK_INTERVAL) {
+            timer = timer(period = Extras.CHECK_INTERVAL) {
                 clients.forEach {
                     try {
                         if (publishConnection == null) publishConnection =
@@ -176,7 +176,7 @@ class RedisService : Service() {
                         e.printStackTrace()
                     } catch (e: RedisCommandTimeoutException) {
                         // 연결했었지만 네트워크가 끊겨서 다시 연결 실패 상황
-                        broadcastToActivity(RedisExtras.UNKNOWN, "fail to reconnect")
+                        broadcastToActivity(Extras.UNKNOWN, "fail to reconnect")
                         e.printStackTrace()
                     }
                 }
@@ -199,7 +199,7 @@ class RedisService : Service() {
                     }
                     clients.clear()
                     isConnecting.set(false)
-                    broadcastToActivity(RedisExtras.UNKNOWN, "fail to connect")
+                    broadcastToActivity(Extras.UNKNOWN, "fail to connect")
 
                     return@thread
                 }.apply {
@@ -247,14 +247,13 @@ class RedisService : Service() {
     /**
      * 액티비티의 리시버로 보내기
      */
-    private fun broadcastToActivity(channel: String, data: String) =
-        with(Intent(AppData.ACTION_REDIS_DATA)) {
-            AppData.error(TAG, "broadcastToActivity called. channel : $channel, data : $data")
-            putExtra(RedisExtras.COMMAND, "REDIS")
-            putExtra("channel", channel)
-            putExtra("data", data)
-            sendBroadcast(this)
-        }
+    private fun broadcastToActivity(channel: String, data: String) = with(Intent(AppData.ACTION_REDIS_DATA)) {
+        AppData.error(TAG, "broadcastToActivity called. channel : $channel, data : $data")
+        putExtra(Extras.COMMAND, "REDIS")
+        putExtra("channel", channel)
+        putExtra("data", data)
+        sendBroadcast(this)
+    }
 
     /**
      * 메시지 전송 시
