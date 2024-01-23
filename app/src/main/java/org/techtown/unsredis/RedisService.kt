@@ -247,7 +247,7 @@ class RedisService : Service() {
     /**
      * 액티비티의 리시버로 보내기
      */
-    private fun broadcastToActivity(channel: String, data: String) = with(Intent(AppData.ACTION_REDIS_DATA)) {
+    private fun broadcastToActivity(channel: String, data: String) = with(Intent(AppData.ACTION_REMOTE_DATA)) {
         AppData.error(TAG, "broadcastToActivity called. channel : $channel, data : $data")
         putExtra(Extras.COMMAND, "REDIS")
         putExtra("channel", channel)

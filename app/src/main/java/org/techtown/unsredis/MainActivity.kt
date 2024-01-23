@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
     private fun setData(data: String) {
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called. data: $data")
-        // TODO: 레디스로부터 받은 메시지 처리 로직 작성
+        // TODO: 받은 메시지 처리 로직 작성
     }
 
     private fun connect(channel: String) {
