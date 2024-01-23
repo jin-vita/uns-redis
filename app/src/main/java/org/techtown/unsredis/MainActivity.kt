@@ -19,8 +19,8 @@ class MainActivity : AppCompatActivity() {
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val tag: String = javaClass.simpleName
 
-    private lateinit var redisReceiver: BroadcastReceiver
-    private lateinit var redisFilter: IntentFilter
+    private lateinit var receiver: BroadcastReceiver
+    private lateinit var filter: IntentFilter
 
     private var channelList = arrayOf("test01", "test02")
 
@@ -28,13 +28,13 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        ContextCompat.registerReceiver(baseContext, redisReceiver, redisFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(baseContext, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onStop() {
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        unregisterReceiver(redisReceiver)
+        unregisterReceiver(receiver)
         super.onStop()
     }
 
@@ -95,9 +95,9 @@ class MainActivity : AppCompatActivity() {
     private fun initReceiver() {
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        redisFilter = IntentFilter()
-        redisFilter.addAction(AppData.ACTION_REDIS_DATA)
-        redisReceiver = object : BroadcastReceiver() {
+        filter = IntentFilter()
+        filter.addAction(AppData.ACTION_REMOTE_DATA)
+        receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) = setReceivedData(intent)
         }
     }
