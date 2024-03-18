@@ -121,7 +121,7 @@ class RedisService : Service() {
         AppData.debug(TAG, "connectRedis called.")
 
         thread {
-            // 다른 channel 의 기존 연결이 있다면 끊고 1초 뒤 다시 연결 시도 (clients 에 값이 있다면 언제나 단 하나)
+            // 다른 channel 의 기존 연결이 있다면 끊고 다시 연결 시도 (clients 에 값이 있다면 언제나 단 하나)
             clients.forEach {
                 if (it.channel != channelId) {
                     disconnectRedis(true)
@@ -241,7 +241,6 @@ class RedisService : Service() {
     private fun onMessageReceived(channel: String, data: String) {
         AppData.debug(TAG, "onMessageReceived called in RedisService.")
         broadcastToActivity(channel, data)
-
     }
 
     /**
