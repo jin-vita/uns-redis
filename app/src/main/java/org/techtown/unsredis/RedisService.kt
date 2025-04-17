@@ -5,9 +5,13 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.Message
+import android.os.Messenger
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisCommandTimeoutException
@@ -78,7 +82,7 @@ class RedisService : Service() {
         val notificationChannel =
             NotificationChannel(channelId, "Redis Channel", NotificationManager.IMPORTANCE_LOW)
         val notificationManager =
-            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(notificationChannel)
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Redis")
@@ -176,7 +180,7 @@ class RedisService : Service() {
                         e.printStackTrace()
                     } catch (e: RedisCommandTimeoutException) {
                         // 연결했었지만 네트워크가 끊겨서 다시 연결 실패 상황
-                        broadcastToActivity(Extras.UNKNOWN, "fail to reconnect")
+                        sendToActivity(Extras.UNKNOWN, "fail to reconnect")
                         e.printStackTrace()
                     }
                 }
@@ -192,6 +196,7 @@ class RedisService : Service() {
                     it.client.connectPubSub().sync()
                 } catch (e: RedisConnectionException) {
                     // 네트워크에 해당 레디스서버 IP 와 PORT 가 없어서 연결실패 상황
+                    AppData.error(TAG, "연결실패: ${e.printStackTrace()}")
                     timer?.cancel()
                     clients.forEach { client ->
                         if (client.isConnected) client.connection?.unsubscribe(client.channel)
@@ -199,7 +204,7 @@ class RedisService : Service() {
                     }
                     clients.clear()
                     isConnecting.set(false)
-                    broadcastToActivity(Extras.UNKNOWN, "fail to connect")
+                    sendToActivity(Extras.UNKNOWN, "fail to connect")
 
                     return@thread
                 }.apply {
@@ -217,14 +222,14 @@ class RedisService : Service() {
 
                         override fun subscribed(channel: String, count: Long) {
                             it.isConnected = true
-                            broadcastToActivity(channel, "$channel subscribed")
+                            sendToActivity(channel, "$channel subscribed")
                             sendData(channel, "successfully connected. $channel - $host:$port")
                             handler.postDelayed(::checkConnection, 1000)
                         }
 
                         override fun unsubscribed(channel: String, count: Long) {
                             it.isConnected = false
-                            broadcastToActivity(channel, "$channel unsubscribed")
+                            sendToActivity(channel, "$channel unsubscribed")
                         }
 
                     })
@@ -240,18 +245,18 @@ class RedisService : Service() {
      */
     private fun onMessageReceived(channel: String, data: String) {
         AppData.debug(TAG, "onMessageReceived called in RedisService.")
-        broadcastToActivity(channel, data)
+        sendToActivity(channel, data)
     }
 
-    /**
-     * 액티비티의 리시버로 보내기
-     */
-    private fun broadcastToActivity(channel: String, data: String) = with(Intent(AppData.ACTION_REMOTE_DATA)) {
-        AppData.error(TAG, "broadcastToActivity called. channel : $channel, data : $data")
-        putExtra(Extras.COMMAND, "REDIS")
-        putExtra("channel", channel)
-        putExtra("data", data)
-        sendBroadcast(this)
+    private fun sendToActivity(channel: String, data: String) {
+        val bundle = Bundle().apply {
+            putString("channel", channel)
+            putString("data", data)
+        }
+
+        val msg = Message.obtain(null, 2) // what=2은 메시지 타입 식별용
+        msg.data = bundle
+        activityMessenger?.send(msg)
     }
 
     /**
@@ -273,6 +278,26 @@ class RedisService : Service() {
         }
     }
 
-    override fun onBind(intent: Intent): IBinder =
-        throw UnsupportedOperationException("Not yet implemented")
+    private var activityMessenger: Messenger? = null
+
+    // Service에서 수신할 메시지 핸들러
+    private val serviceHandler = Handler(Looper.getMainLooper()) { msg ->
+        when (msg.what) {
+            1 -> {
+                val received = msg.obj as String
+                Log.d("MyService", "Activity로부터 받은 데이터: $received")
+                // 응답 전송
+                sendToActivity("bind", "Service에서 받은 메시지에 응답함!")
+            }
+        }
+        true
+    }
+
+    private val messenger = Messenger(serviceHandler)
+
+    override fun onBind(intent: Intent?): IBinder? {
+        // Activity에서 보낸 Messenger 받기
+        activityMessenger = intent?.getParcelableExtra("activityMessenger")
+        return messenger.binder
+    }
 }

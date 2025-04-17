@@ -1,16 +1,19 @@
 package org.techtown.unsredis
 
-import android.content.BroadcastReceiver
-import android.content.Context
+import android.content.ComponentName
 import android.content.Intent
-import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.os.Message
+import android.os.Messenger
 import android.text.method.ScrollingMovementMethod
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import org.techtown.unsredis.databinding.ActivityMainBinding
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -19,30 +22,57 @@ class MainActivity : AppCompatActivity() {
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val tag: String = javaClass.simpleName
 
-    private lateinit var receiver: BroadcastReceiver
-    private lateinit var filter: IntentFilter
-
     private var channelList = arrayOf("test01", "test02")
+
+    private val activityHandler = Handler(Looper.getMainLooper()) { msg ->
+        if (msg.what == 2) {
+            val channel = msg.data.getString("channel").toString()
+            val data = msg.data.getString("data").toString()
+            setReceivedData(channel, data)
+        }
+        true
+    }
+
+    private val activityMessenger = Messenger(activityHandler)
+
+    private var serviceMessenger: Messenger? = null
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            serviceMessenger = Messenger(service)
+
+            // 메시지 보내기
+            val msg = Message.obtain(null, 1, "안녕, 서비스야!")
+            msg.replyTo = activityMessenger // 응답 받을 곳 지정
+            serviceMessenger?.send(msg)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            serviceMessenger = null
+        }
+    }
 
     override fun onStart() {
         super.onStart()
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        ContextCompat.registerReceiver(baseContext, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+
+        val intent = Intent(this, RedisService::class.java)
+        intent.putExtra("activityMessenger", activityMessenger)
+        bindService(intent, connection, BIND_AUTO_CREATE)
     }
 
     override fun onStop() {
         val method = Thread.currentThread().stackTrace[2].methodName
         AppData.debug(tag, "$method called.")
-        unregisterReceiver(receiver)
+
+        unbindService(connection)
         super.onStop()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
-        initReceiver()
 
         initView()
     }
@@ -84,31 +114,17 @@ class MainActivity : AppCompatActivity() {
                         sendData(channel, this.text.toString().trim())
                     }
                 }
-                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(this.windowToken, 0)
                 this.setText("")
             }
         }
     }
 
-    // 리시버 초기화
-    private fun initReceiver() {
-        val method = Thread.currentThread().stackTrace[2].methodName
-        AppData.debug(tag, "$method called.")
-        filter = IntentFilter()
-        filter.addAction(AppData.ACTION_REMOTE_DATA)
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) = setReceivedData(intent)
-        }
-    }
-
-    fun setReceivedData(intent: Intent) {
-        val command = intent.getStringExtra(Extras.COMMAND)
-        val channel = intent.getStringExtra(Extras.CHANNEL)
-        val data = intent.getStringExtra(Extras.DATA)
-        AppData.debug(tag, "$command : $channel - $data")
-        printLog("$command : $channel - $data")
-        data?.apply {
+    fun setReceivedData(channel: String, data: String) {
+        AppData.debug(tag, "setReceivedData, $channel - $data")
+        printLog("$channel - $data")
+        data.apply {
             when {
                 startsWith("check redis connection") -> return
                 startsWith("already connected") or startsWith("successfully connected") -> {

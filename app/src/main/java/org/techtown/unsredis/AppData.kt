@@ -11,8 +11,8 @@ object AppData {
     val logList by lazy { mutableListOf<String>() }
 
     const val ACTION_REMOTE_DATA = "org.techtown.remote.data"
-    const val REDIS_HOST = "192.168.100.100"
-    const val REDIS_PORT = 6379
+    const val REDIS_HOST = "192.168.8.152"
+    const val REDIS_PORT = 40020
 
     var isDebug = true
     fun debug(tag: String, msg: String) {

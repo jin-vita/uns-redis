@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Notification startForeground -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
 
     <application
         android:allowBackup="true"
@@ -31,7 +32,6 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="remoteMessaging"
-            android:process=":redis"
             tools:ignore="ForegroundServicePermission" />
     </application>
 
